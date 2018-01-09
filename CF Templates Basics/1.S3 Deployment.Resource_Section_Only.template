@@ -1,0 +1,8 @@
+{
+	"Resources":{
+		"S3BucketNewVK":{
+		"Type" : "AWS::S3::Bucket"
+		}
+	}
+
+}

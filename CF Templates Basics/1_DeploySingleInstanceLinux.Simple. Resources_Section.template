@@ -1,0 +1,117 @@
+{
+	
+	"AWSTemplateFormatVersion" : "2010-09-09",
+	"Description" : "Please Ensure to Delete the Stack after testing is completed to avoid a huge Bill",
+	"Parameters" : {
+			"KeyName": {
+			      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+			      "Type": "AWS::EC2::KeyPair::KeyName",
+			      "Default" : "vijay-khanna-seoul",
+			      "ConstraintDescription" : "Can contain only ASCII characters."
+		    },
+			"InstanceType" : {
+			      "Description" : "Please Select WebServer EC2 instance type",
+			      "Type" : "String",
+			      "Default" : "t2.micro",
+			      "AllowedValues" : [ "t1.micro", "t2.micro", "t2.small", "t2.medium", "m1.small", "m1.medium"],
+			      "ConstraintDescription" : "Must be a valid EC2 instance type"
+			},
+		    "SSHLocation" : {
+		      "Description" : "The IP address range that can be used to SSH to the EC2 instances",
+		      "Type": "String",
+		      "MinLength": "9",
+		      "MaxLength": "18",
+		      "Default": "0.0.0.0/0",
+		      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+		      "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x"
+		    } 		
+		
+		
+		
+		
+		
+		
+	},
+	
+	"Mappings" : {
+	    "AWSInstanceType2Arch" : {
+	      "t2.micro"    : { "Arch" : "HVM64"  },
+	      "t2.small"    : { "Arch" : "HVM64"  },
+	      "m1.small"    : { "Arch" : "PV64"   },
+	      "c1.medium"   : { "Arch" : "PV64"   },
+	      "c1.xlarge"   : { "Arch" : "PV64"   },
+	      "g2.2xlarge"  : { "Arch" : "HVMG2"  },
+	      "r3.large"    : { "Arch" : "HVM64"  },
+	      "i2.xlarge"   : { "Arch" : "HVM64"  },
+	      "hi1.4xlarge" : { "Arch" : "HVM64"  },
+	      "hs1.8xlarge" : { "Arch" : "HVM64"  },
+	      "cr1.8xlarge" : { "Arch" : "HVM64"  }
+	},
+	
+	    "AWSRegionArch2AMI" : {
+	      "us-east-1"      : { "PV64" : "ami-50842d38", "HVM64" : "ami-08842d60", "HVMG2" : "ami-3a329952"  },
+	      "us-west-2"      : { "PV64" : "ami-af86c69f", "HVM64" : "ami-8786c6b7", "HVMG2" : "ami-47296a77"  },
+	      "us-west-1"      : { "PV64" : "ami-c7a8a182", "HVM64" : "ami-cfa8a18a", "HVMG2" : "ami-331b1376"  },
+	      "ap-southeast-1" : { "PV64" : "ami-20e1c572", "HVM64" : "ami-d6e1c584", "HVMG2" : "ami-fabe9aa8"  },
+	      "ap-northeast-1" : { "PV64" : "ami-21072820", "HVM64" : "ami-35072834", "HVMG2" : "ami-5dd1ff5c"  },
+	      "ap-southeast-2" : { "PV64" : "ami-8b4724b1", "HVM64" : "ami-fd4724c7", "HVMG2" : "ami-e98ae9d3"  },
+	      "eu-central-1"   : { "PV64" : "ami-a03503bd", "HVM64" : "ami-b43503a9", "HVMG2" : "ami-b03503ad"  },
+		  "ap-northeast-2" : { "PV64" : "ami-1196317f", "HVM64" : "ami-1196317f", "HVMG2" : "ami-1559ff7b"  }
+	    }
+	},
+
+	"Resources" : {
+			    "WebServerInstance": {
+				      "Type": "AWS::EC2::Instance",
+				      "Properties": {
+					        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+					                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" }, "Arch" ] } ] },
+					        "InstanceType"   : { "Ref" : "InstanceType" },
+					        "SecurityGroups" : [ {"Ref" : "WebServerSecurityGroup"} ],
+					        "KeyName"        : { "Ref" : "KeyName" },
+					        "Tags" : [ 
+					        	{"Key" : "owner", "Value" : "Vijay_Khanna"},
+					        	{"Key" : "Dept", "Value" : "Integrated_Services"},
+					        	{"Key" : "email", "Value" : "vijay.khanna@wipro.com"},
+					        	{"Key" : "env", "Value" : "Development"},
+					        	{"Key" : "Role", "Value" : "Test Instance"}
+					        ]
+				 	 	}
+				 },
+				 
+				 "WebServerSecurityGroup" : {
+				      "Type" : "AWS::EC2::SecurityGroup",
+				      "Properties" : {
+					        "GroupDescription" : "Created by Vijay: Via CloudFormation : Enable HTTP access via port 80 and SSH via 22",
+					        "SecurityGroupIngress" : [
+					          {"IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0"},
+					          {"IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : { "Ref" : "SSHLocation"}}
+					        ]
+      					}
+
+						
+
+				 }
+				 
+				 
+				 
+				 
+				 
+	},
+	
+	"Outputs" : {
+		    "WebsiteURL" : {
+		      "Description" : "URL for newly created LAMP stack",
+		      "Value" : { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : [ "WebServerInstance", "PublicDnsName" ]}]] }
+		    },
+		    "SecurityGroupID" : {
+		      "Description" : "SG ID",
+		      "Value" : { "Fn::Join" : ["", ["SGID : ", { "Fn::GetAtt" : [ "WebServerSecurityGroup", "GroupId" ]}]] }
+		    },
+		    "InstancePublicIP" : {
+		      "Description" : "instance Public IP",
+		      "Value" : {"Fn::GetAtt" : ["WebServerInstance", "PublicIp" ] }
+		    }
+ 	 }
+	
+}
