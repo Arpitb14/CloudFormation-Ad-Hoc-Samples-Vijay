@@ -1,0 +1,145 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Template to launch an Amazon Linux instance.",
+  "Parameters": {
+    "InstanceType": {
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues" : [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium"],
+      "Description": "Enter Size . Default is small."
+    },
+    "KeyName": {
+      "Type" : "AWS::EC2::KeyPair::KeyName",
+      "Default" : "Integrated-Services-Vijay-Mumbai",
+      "Description": "Enter the key pair name that you want associated with this instance. Note: Name is required"
+    }
+  },
+  "Mappings": {
+      "RegionMap" : {
+          "us-east-1"      : { "AMI" : "ami-05355a6c" },
+          "us-west-1"      : { "AMI" : "ami-3ffed17a" },
+          "us-west-2"      : { "AMI" : "ami-0358ce33" },
+          "eu-west-1"      : { "AMI" : "ami-c7c0d6b3" },
+          "sa-east-1"      : { "AMI" : "ami-5253894f" },
+          "ap-southeast-1" : { "AMI" : "ami-fade91a8" },
+          "ap-southeast-2" : { "AMI" : "ami-d16bfbeb" },
+          "ap-south-1"	   : { "AMI" : "ami-ffbdd790" }
+      }
+  },
+  "Resources": {
+    "Ec2Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId":  {"Fn::FindInMap":["RegionMap", {"Ref" : "AWS::Region" }, "AMI" ]},
+        "InstanceType": { "Ref": "InstanceType" },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups": [ { "Ref": "WebSecurityGroup" } ],
+        "UserData": {
+          "Fn::Base64": { "Fn::Join": [ "", [
+                "#!/bin/bash -v\n",
+                "# Make certain that cfn itself is up to date \n",
+                "yum update -y aws-cfn-bootstrap \n",
+				"echo \"Hello World\" >> /vijay.txt \n",
+				"cd / \n",
+				"chmod 222 vijay.txt \n",
+				"chown roor:root vijay.txt \n",
+				"echo \"<body bgcolor=#$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)>\" > /var/www/html/index.html  &&  ipadr=$(curl http://169.254.169.254/latest/meta-data/local-hostname) && echo $ipadr >> /var/www/html/index.html && echo \"<h2>Welcome Vijay - 1 </h2>\" >> /var/www/html/index.html && chmod 644 /var/www/html/index.html \n",
+				"sleep 5 \n",
+                "# Helper function\n",
+                "function error_exit\n",
+                "{\n",
+                "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" '", { "Ref": "WaitHandle" }, "'\n",
+                "  exit 1\n",
+                "}\n",
+"echo \"<body bgcolor=#$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)>\" > /var/www/html/index.html  &&  ipadr=$(curl http://169.254.169.254/latest/meta-data/local-hostname) && echo $ipadr >> /var/www/html/index.html && echo \"<h2>Welcome Vijay - 2 </h2>\" >> /var/www/html/index.html && chmod 644 /var/www/html/index.html \n",
+                "/sbin/service httpd stop \n",
+                "/sbin/service httpd start \n",
+                "sleep 5 \n",
+                "# install and start httpd \n",
+                "yum install -y httpd || error_exit 'Failed to install Apache' \n",
+                "/sbin/service httpd start || error_exit 'Failed to start Apache' \n",
+
+				"echo \"<body bgcolor=#$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)>\" > /var/www/html/index.html  &&  ipadr=$(curl http://169.254.169.254/latest/meta-data/local-hostname) && echo $ipadr >> /var/www/html/index.html && echo \"<h2>Welcome Vijay - 3 </h2>\" >> /var/www/html/index.html && chmod 644 /var/www/html/index.html \n",
+                
+				"/sbin/service httpd stop \n",
+                "/sbin/service httpd start \n",
+                "sleep 10 \n",
+
+				"echo \"<body bgcolor=#$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)>\" > /var/www/html/index.html  &&  ipadr=$(curl http://169.254.169.254/latest/meta-data/local-hostname) && echo $ipadr >> /var/www/html/index.html && echo \"<h2>Welcome Vijay - 4 </h2>\" >> /var/www/html/index.html && chmod 644 /var/www/html/index.html \n",
+                
+                "# We got here without issues (except as signaled), so signal success\n",
+                "/opt/aws/bin/cfn-signal -e 0 -r \"User data script complete\" '", { "Ref": "WaitHandle" }, "'\n"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "WebSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable tcp access for Web and SSH traffic from outside",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "WaitHandle": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle"
+    },
+    "WaitCondition": {
+      "Type": "AWS::CloudFormation::WaitCondition",
+      "DependsOn": "Ec2Instance",
+      "Properties": {
+        "Handle": { "Ref": "WaitHandle" },
+        "Timeout": "300"
+      }
+    }
+  },
+  "Outputs": {
+    "InstanceId": {
+      "Description": "Instance ID of the Web Server",
+      "Value": {
+        "Ref": "Ec2Instance"
+      }
+    },
+    "AZ": {
+      "Description": "Instances is running in Availability Zone ",
+      "Value": {
+        "Fn::GetAtt": [
+          "Ec2Instance",
+          "AvailabilityZone"
+        ]
+      }
+    },
+    "PublicIP": {
+      "Description": "Public IP",
+      "Value": {
+        "Fn::GetAtt": [
+          "Ec2Instance",
+          "PublicIp"
+        ]
+      }
+    },
+    "PublicDNS": {
+      "Description": "Instance Public DNS Name",
+      "Value": {
+        "Fn::GetAtt": [
+          "Ec2Instance",
+          "PublicDnsName"
+        ]
+      }
+    }
+  }
+}
