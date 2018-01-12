@@ -27,13 +27,33 @@
       }
   },
   "Resources": {
+  "InstanceProfile" : {
+    "Type" : "AWS::IAM::InstanceProfile",
+    "Properties" : {
+      "Path" : "/",
+      "Roles" : ["is-vijay-khanna-EC2-cloud-watch-FullAccess"]
+    }
+  },
+  
+  
+  
     "Ec2Instance": {
       "Type": "AWS::EC2::Instance",
       "Properties": {
         "ImageId":  {"Fn::FindInMap":["RegionMap", {"Ref" : "AWS::Region" }, "AMI" ]},
+		"IamInstanceProfile" : {"Ref" : "InstanceProfile"},
         "InstanceType": { "Ref": "InstanceType" },
         "KeyName": { "Ref": "KeyName" },
         "SecurityGroups": [ { "Ref": "WebSecurityGroup" } ],
+		"Tags" : [
+        {"Key": "Name", "Value": "VK-Linux-Instance-Web-Server"},
+		{"Key": "Owner", "Value": "Vijay_Khanna"},
+		{"Key": "ServiceLine_Department", "Value": "Integrated_Services_AWS_Practice"},
+		{"Key": "User_Wipro_Email_id", "Value": "vijay.khanna@wipro.com"},
+		{"Key": "UserLocation_State_Country", "Value": "India_Bangalore"},
+		{"Key": "Purpose", "Value": "Testing_OpsWorks_CF_Orchestration"},
+		{"Key": "Date_For_Resource_Deletion_DD_Mmm_YYYY", "Value": "27_Apr_2018"}
+         ],
         "UserData": {
           "Fn::Base64": { "Fn::Join": [ "", [
                 "#!/bin/bash -v\n",
@@ -43,7 +63,7 @@
 				"cd / \n",
 				"chmod 222 vijay.txt \n",
 				"chown roor:root vijay.txt \n",
-				"echo \"<body bgcolor=#$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)>\" > /var/www/html/index.html  &&  ipadr=$(curl http://169.254.169.254/latest/meta-data/local-hostname) && echo $ipadr >> /var/www/html/index.html && echo \"<h2>Welcome Vijay - 1 </h2>\" >> /var/www/html/index.html && chmod 644 /var/www/html/index.html \n",
+				"echo \"<body bgcolor=#$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)>\" > /var/www/html/index.html  &&  ipadr=$(curl http://169.254.169.254/latest/meta-data/local-hostname) && echo $ipadr >> /var/www/html/index.html && echo \"<h2>Welcome Vijay - 1 </h2>\" >> /var/www/html/index.html && echo \"<hr>\" >> /var/www/html/index.html && echo \"<H1>Date Created\" `date` \"</H1>\" >> /var/www/html/index.html && chmod 644 /var/www/html/index.html \n",
 				"sleep 5 \n",
                 "# Helper function\n",
                 "function error_exit\n",
@@ -65,7 +85,7 @@
                 "/sbin/service httpd start \n",
                 "sleep 10 \n",
 
-				"echo \"<body bgcolor=#$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)>\" > /var/www/html/index.html  &&  ipadr=$(curl http://169.254.169.254/latest/meta-data/local-hostname) && echo $ipadr >> /var/www/html/index.html && echo \"<h2>Welcome Vijay - 4 </h2>\" >> /var/www/html/index.html && chmod 644 /var/www/html/index.html \n",
+				"echo \"<body bgcolor=#$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)$(shuf -i 10-99 -n 1)>\" > /var/www/html/index.html  &&  ipadr=$(curl http://169.254.169.254/latest/meta-data/local-hostname) && echo $ipadr >> /var/www/html/index.html && echo \"<h2>Hello World- 4 </h2>\" >> /var/www/html/index.html  && echo  \"<h2>This Web Server Created on :: ==>  \" `date` \"</h2>\"  >> /var/www/html/index.html&& chmod 644 /var/www/html/index.html \n",
                 
                 "# We got here without issues (except as signaled), so signal success\n",
                 "/opt/aws/bin/cfn-signal -e 0 -r \"User data script complete\" '", { "Ref": "WaitHandle" }, "'\n"
@@ -79,6 +99,14 @@
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Enable tcp access for Web and SSH traffic from outside",
+		"Tags" : [
+        {"Key": "Owner", "Value": "Vijay_Khanna"},
+		{"Key": "ServiceLine_Department", "Value": "Integrated_Services_AWS_Practice"},
+		{"Key": "User_Wipro_Email_id", "Value": "vijay.khanna@wipro.com"},
+		{"Key": "UserLocation_State_Country", "Value": "India_Bangalore"},
+		{"Key": "Purpose", "Value": "Testing_OpsWorks_CF_Orchestration"},
+		{"Key": "Date_For_Resource_Deletion_DD_Mmm_YYYY", "Value": "27_Apr_2018"}
+         ],
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
